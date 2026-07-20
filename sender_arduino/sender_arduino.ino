@@ -1,10 +1,13 @@
 // SENDER — watches its ultrasonic sensor and pulses pin 10 HIGH
 // whenever something passes within range. Wire pin 10 -> receiver's
 // pin 10, plus a shared GND between the two boards.
+// Also blinks heartbeatPin so the receiver can confirm the two boards
+// are actually wired together, not just floating.
 
 const int trigPin = 3;
 const int echoPin = 5;
 const int signalPin = 10;
+const int heartbeatPin = 9; // wire this to the receiver's pin 9
 
 long duration;
 int distanceCm;
@@ -21,11 +24,18 @@ const unsigned long triggerCooldown = 1500; // ms — tune to your runners' stri
 unsigned long lastScanPrint = 0;
 const unsigned long scanPrintInterval = 5000;
 
+// link heartbeat: toggle every second so the receiver can tell the wire is alive
+bool heartbeatState = false;
+unsigned long lastHeartbeatToggle = 0;
+const unsigned long heartbeatInterval = 1000;
+
 void setup() {
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
   pinMode(signalPin, OUTPUT);
   digitalWrite(signalPin, LOW);
+  pinMode(heartbeatPin, OUTPUT);
+  digitalWrite(heartbeatPin, LOW);
   Serial.begin(9600); // USB debug monitor for this board
 }
 
@@ -39,6 +49,13 @@ void loop() {
 
   duration = pulseIn(echoPin, HIGH, 30000);
   distanceCm = duration * 0.034 / 2;
+
+  // link heartbeat: flip the pin every second so it never sits still
+  if (millis() - lastHeartbeatToggle >= heartbeatInterval) {
+    lastHeartbeatToggle = millis();
+    heartbeatState = !heartbeatState;
+    digitalWrite(heartbeatPin, heartbeatState);
+  }
 
   // troubleshooting heartbeat: prove the sensor + loop are alive every 5 sec
   if (millis() - lastScanPrint >= scanPrintInterval) {

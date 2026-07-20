@@ -2,6 +2,7 @@
 const int trigPin = 3;
 const int echoPin = 5;
 const int signalPin = 10; // reads the HIGH pulse from the sender board
+const int heartbeatPin = 9; // watches the sender's blink to confirm the link is wired up
 
 // variables for duration and distance (I gues)
 long duration;
@@ -28,10 +29,16 @@ const unsigned long startSignalCooldown = 1500;
 unsigned long lastScanPrint = 0;
 const unsigned long scanPrintInterval = 5000;
 
+// link heartbeat: tracks whether the sender's blink pin is actually changing
+bool lastHeartbeatReading = LOW;
+unsigned long lastHeartbeatChangeTime = 0;
+const unsigned long heartbeatTimeout = 3000; // no change in 3 sec = not connected
+
 void setup() {
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
   pinMode(echoPin, INPUT);  // Sets the echoPin as an Input
   pinMode(signalPin, INPUT); // reads the sender board's HIGH pulse
+  pinMode(heartbeatPin, INPUT_PULLUP); // pulled HIGH when nothing is wired, so it won't float
   Serial.begin(9600);       // Starts the serial communication (USB debug)
 }
 
@@ -51,12 +58,24 @@ void loop() {
   // Calculate the distance in centimeters:
   distanceCm = duration * 0.034 / 2;
 
+  // link heartbeat: watch for the sender's blink pin actually changing state
+  bool heartbeatReading = digitalRead(heartbeatPin);
+  if (heartbeatReading != lastHeartbeatReading) {
+    lastHeartbeatReading = heartbeatReading;
+    lastHeartbeatChangeTime = millis();
+  }
+
   // troubleshooting heartbeat: prove the sensor + loop are alive every 5 sec
   if (millis() - lastScanPrint >= scanPrintInterval) {
     lastScanPrint = millis();
     Serial.print("Scanning... distance: ");
     Serial.print(distanceCm);
-    Serial.println(" cm");
+    Serial.print(" cm  |  Link: ");
+    if (millis() - lastHeartbeatChangeTime <= heartbeatTimeout) {
+      Serial.println("CONNECTED");
+    } else {
+      Serial.println("NOT CONNECTED - check pin 9 / pin 10 / GND wiring");
+    }
   }
 
   // check for the start signal coming in from the sender board
