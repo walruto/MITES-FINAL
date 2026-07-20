@@ -2,15 +2,21 @@
 const int trigPin = 3;
 const int echoPin = 5;
 
+// SET THIS PER BOARD BEFORE UPLOADING:
+// true  = this is the finish-line board (sends the signal over Serial1)
+// false = this is the start board (owns the lap timer, listens on Serial1)
+const bool isFinishBoard = false;
+
 // variables for duration and distance (I gues)
 long duration;
 int distanceCm;
 // tetting the length like MITES values
-const int tooClose = 170;
+const int tooClose = 30;
 const int tooFar   = 240;
 
 // lap timer state
 bool personAtGate = false;  // stay false until the huzz approach the block
+bool waitingForFinish = false; // start board: true from start-trigger until finish signal arrives
 int lapNumber = 0;
 unsigned long lapStartTime = 0;
 
@@ -21,7 +27,8 @@ const unsigned long triggerCooldown = 1500; // ms — tune to your runners' stri
 void setup() {
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
   pinMode(echoPin, INPUT);  // Sets the echoPin as an Input
-  Serial.begin(9600);       // Starts the serial communication
+  Serial.begin(9600);       // Starts the serial communication (USB debug)
+  Serial1.begin(9600);      // wire link between the two boards (D0/D1)
 }
 
 void loop() {
@@ -68,23 +75,15 @@ void loop() {
           personAtGate = true; // edge trigger, only fires once per pass
           lastTriggerTime = now;
 
-          if (lapNumber == 0) {
-            lapNumber = 1;
+          if (isFinishBoard) {
+            // finish board: just tell the start board someone crossed
+            Serial1.write('F');
+            Serial.println("Finish line crossed -> signal sent");
+          } else if (!waitingForFinish) {
+            // start board: begin timing this lap
             lapStartTime = now;
-            Serial.println("Lap 1 started!");
-          } else {
-            unsigned long lapTime = now - lapStartTime;
-            Serial.print("Lap ");
-            Serial.print(lapNumber);
-            Serial.print(" finished in ");
-            Serial.print(lapTime / 1000.0);
-            Serial.println(" sec");
-
-            lapNumber++;
-            lapStartTime = now;
-            Serial.print("Lap ");
-            Serial.print(lapNumber);
-            Serial.println(" started!");
+            waitingForFinish = true;
+            Serial.println("Lap started, waiting for finish...");
           }
         }
         // else: too soon after last trigger — treat as the same pass, ignore
@@ -92,6 +91,21 @@ void loop() {
     } else {
       // person stepped away from the gate, re-arm for the next pass
       personAtGate = false;
+    }
+  }
+
+  // start board only: check for the finish-line signal from the other Arduino
+  if (!isFinishBoard && Serial1.available()) {
+    char c = Serial1.read();
+    if (c == 'F' && waitingForFinish) {
+      unsigned long lapTime = millis() - lapStartTime;
+      lapNumber++;
+      Serial.print("Lap ");
+      Serial.print(lapNumber);
+      Serial.print(" completed in ");
+      Serial.print(lapTime / 1000.0);
+      Serial.println(" sec");
+      waitingForFinish = false;
     }
   }
 
