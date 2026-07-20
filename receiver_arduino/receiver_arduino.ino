@@ -48,10 +48,22 @@ void loop() {
   distanceCm = duration * 0.034 / 2;
 
   // check for the start signal coming in from the sender board
-  if (digitalRead(signalPin) == HIGH && !waitingForFinish) {
+  if (digitalRead(signalPin) == HIGH) {
     unsigned long now = millis();
     if (now - lastStartSignalTime >= startSignalCooldown) {
       lastStartSignalTime = now;
+
+      // if a lap was already running, this signal closes it out before starting the next one
+      if (waitingForFinish) {
+        unsigned long lapTime = now - lapStartTime;
+        lapNumber++;
+        Serial.print("Lap ");
+        Serial.print(lapNumber);
+        Serial.print(" completed in ");
+        Serial.print(lapTime / 1000.0);
+        Serial.println(" sec");
+      }
+
       lapStartTime = now;
       waitingForFinish = true;
       Serial.println("Lap started, waiting for finish...");
