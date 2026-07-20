@@ -17,6 +17,10 @@ bool personAtGate = false;
 unsigned long lastTriggerTime = 0;
 const unsigned long triggerCooldown = 1500; // ms — tune to your runners' stride time
 
+// troubleshooting heartbeat: print a scan reading every 5 sec regardless of detections
+unsigned long lastScanPrint = 0;
+const unsigned long scanPrintInterval = 5000;
+
 void setup() {
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
@@ -35,6 +39,14 @@ void loop() {
 
   duration = pulseIn(echoPin, HIGH, 30000);
   distanceCm = duration * 0.034 / 2;
+
+  // troubleshooting heartbeat: prove the sensor + loop are alive every 5 sec
+  if (millis() - lastScanPrint >= scanPrintInterval) {
+    lastScanPrint = millis();
+    Serial.print("Scanning... distance: ");
+    Serial.print(distanceCm);
+    Serial.println(" cm");
+  }
 
   // ignore anything too far / no echo entirely, don't count it
   if (distanceCm != 0 && distanceCm <= tooFar) {

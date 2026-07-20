@@ -24,6 +24,10 @@ const unsigned long triggerCooldown = 1500; // ms — tune to your runners' stri
 unsigned long lastStartSignalTime = 0;
 const unsigned long startSignalCooldown = 1500;
 
+// troubleshooting heartbeat: print a scan reading every 5 sec regardless of laps
+unsigned long lastScanPrint = 0;
+const unsigned long scanPrintInterval = 5000;
+
 void setup() {
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
   pinMode(echoPin, INPUT);  // Sets the echoPin as an Input
@@ -46,6 +50,14 @@ void loop() {
 
   // Calculate the distance in centimeters:
   distanceCm = duration * 0.034 / 2;
+
+  // troubleshooting heartbeat: prove the sensor + loop are alive every 5 sec
+  if (millis() - lastScanPrint >= scanPrintInterval) {
+    lastScanPrint = millis();
+    Serial.print("Scanning... distance: ");
+    Serial.print(distanceCm);
+    Serial.println(" cm");
+  }
 
   // check for the start signal coming in from the sender board
   if (digitalRead(signalPin) == HIGH) {
