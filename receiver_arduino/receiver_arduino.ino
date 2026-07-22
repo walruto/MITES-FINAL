@@ -1,8 +1,10 @@
 //pins get the wins
+// RECEIVER (Bluetooth SLAVE) — same HC-05 wiring as the sender
+// (VCC->5V, GND->GND, TX->Nano RX0/D0, RX->Nano TX1/D1 through a
+// voltage divider). This HC-05 must be AT-command-configured as
+// SLAVE and paired with the sender's HC-05 before this sketch runs.
 const int trigPin = 3;
 const int echoPin = 5;
-const int signalPin = 10; // reads the HIGH pulse from the sender board
-const int heartbeatPin = 9; // watches the sender's blink to confirm the link is wired up
 
 // variables for duration and distance (I gues)
 long duration;
@@ -17,6 +19,10 @@ bool waitingForFinish = false; // true from the start signal until the object pa
 int lapNumber = 0;
 unsigned long lapStartTime = 0;
 
+// mirrors what digitalRead(signalPin) used to return, now driven by
+// bytes arriving over Bluetooth instead of a wire on pin 10
+bool signalState = LOW;
+
 // debounce / refractory period so a second foot doesn't retrigger the lap
 unsigned long lastTriggerTime = 0;
 const unsigned long triggerCooldown = 1500; // ms — tune to your runners' stride time
@@ -29,16 +35,15 @@ const unsigned long startSignalCooldown = 1500;
 unsigned long lastScanPrint = 0;
 const unsigned long scanPrintInterval = 5000;
 
-// link heartbeat: tracks whether the sender's blink pin is actually changing
-bool lastHeartbeatReading = LOW;
+// link heartbeat: tracks whether we're still hearing 'H' bytes over Bluetooth
+// (replaces watching the old wired heartbeat pin for state changes)
 unsigned long lastHeartbeatChangeTime = 0;
-const unsigned long heartbeatTimeout = 3000; // no change in 3 sec = not connected
+const unsigned long heartbeatTimeout = 3000; // no 'H' in 3 sec = not connected
 
 void setup() {
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
   pinMode(echoPin, INPUT);  // Sets the echoPin as an Input
-  pinMode(signalPin, INPUT); // reads the sender board's HIGH pulse
-  pinMode(heartbeatPin, INPUT_PULLUP); // pulled HIGH when nothing is wired, so it won't float
+  Serial1.begin(9600);      // HC-05 (Bluetooth slave), data mode baud
   Serial.begin(9600);       // Starts the serial communication (USB debug)
 }
 
@@ -58,11 +63,16 @@ void loop() {
   // Calculate the distance in centimeters:
   distanceCm = duration * 0.034 / 2;
 
-  // link heartbeat: watch for the sender's blink pin actually changing state
-  bool heartbeatReading = digitalRead(heartbeatPin);
-  if (heartbeatReading != lastHeartbeatReading) {
-    lastHeartbeatReading = heartbeatReading;
-    lastHeartbeatChangeTime = millis();
+  // read whatever bytes have come in over Bluetooth this loop
+  while (Serial1.available()) {
+    char c = Serial1.read();
+    if (c == '1') {
+      signalState = HIGH;
+    } else if (c == '0') {
+      signalState = LOW;
+    } else if (c == 'H') {
+      lastHeartbeatChangeTime = millis();
+    }
   }
 
   // troubleshooting heartbeat: prove the sensor + loop are alive every 5 sec
@@ -74,12 +84,12 @@ void loop() {
     if (millis() - lastHeartbeatChangeTime <= heartbeatTimeout) {
       Serial.println("CONNECTED");
     } else {
-      Serial.println("NOT CONNECTED - check pin 9 / pin 10 / GND wiring");
+      Serial.println("NOT CONNECTED - check Bluetooth pairing");
     }
   }
 
   // check for the start signal coming in from the sender board
-  if (digitalRead(signalPin) == HIGH) {
+  if (signalState == HIGH) {
     unsigned long now = millis();
     if (now - lastStartSignalTime >= startSignalCooldown) {
       lastStartSignalTime = now;
