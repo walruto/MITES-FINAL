@@ -144,5 +144,6 @@ void loop() {
     }
   }
 
-  delay(50); // was 1000 — sample fast enough to actually catch a foot passing
+  // no extra delay - pulseIn()'s own timing is already the limiting factor,
+  // so this scans back-to-back as fast as the sensor allows
 }

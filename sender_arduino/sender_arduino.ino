@@ -4,7 +4,7 @@
 // RX->Nano TX1 (D1) (use a voltage divider on this line — HC-05 RX is
 // 3.3V logic). This HC-05 must be AT-command-configured as MASTER and
 // bound to the receiver's HC-05 MAC address before this sketch runs.
-
+  
 const int trigPin = 3;
 const int echoPin = 5;
 
@@ -12,8 +12,8 @@ long duration;
 int distanceCm;
 
 // tetting the length like MITES values
-const int tooClose = 70;
-const int tooFar   = 140;
+const int tooClose = 50;
+const int tooFar   = 100;
 
 bool personAtGate = false;
 unsigned long lastTriggerTime = 0;
@@ -75,5 +75,6 @@ void loop() {
     }
   }
 
-  delay(50);
+  // no extra delay - pulseIn()'s own timing is already the limiting factor,
+  // so this scans back-to-back as fast as the sensor allows
 }

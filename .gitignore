@@ -1,0 +1,3 @@
+web_dashboard/venv/
+__pycache__/
+*.pyc

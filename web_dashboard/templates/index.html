@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lap Timer Dashboard</title>
+  <style>
+    body {
+      font-family: -apple-system, sans-serif;
+      background: #111;
+      color: #eee;
+      text-align: center;
+      padding-top: 30px;
+      margin: 0;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 4px; }
+    .distance { font-size: 4rem; margin: 10px 0; font-weight: bold; }
+    .row { font-size: 1.2rem; margin: 6px 0; }
+    .DETECTED { color: #ff5555; }
+    .clear { color: #55ff88; }
+    .CONNECTED { color: #55ff88; }
+    .NOT_CONNECTED { color: #ff5555; }
+    .unknown { color: #999; }
+    table { margin: 20px auto; border-collapse: collapse; min-width: 220px; }
+    td, th { padding: 6px 16px; border-bottom: 1px solid #333; }
+    .offline { color: #ff5555; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Lap Timer Dashboard</h1>
+  <div class="row" id="conn"></div>
+  <div class="distance" id="distance">-- cm</div>
+  <div class="row"><span id="status">--</span></div>
+  <div class="row"><span id="link">--</span></div>
+
+  <h2>Laps</h2>
+  <table id="laps">
+    <tr><th>Lap</th><th>Time (sec)</th></tr>
+  </table>
+
+  <script>
+    async function poll() {
+      try {
+        const res = await fetch('/data');
+        const d = await res.json();
+
+        document.getElementById('conn').innerHTML = d.connected
+          ? ''
+          : '<span class="offline">Serial port not connected - check SERIAL_PORT in app.py</span>';
+
+        document.getElementById('distance').textContent =
+          (d.distance_cm ?? '--') + ' cm';
+
+        const statusEl = document.getElementById('status');
+        statusEl.textContent = d.status;
+        statusEl.className = d.status;
+
+        const linkEl = document.getElementById('link');
+        linkEl.textContent = 'Link: ' + d.link;
+        linkEl.className = d.link.replace(' ', '_');
+
+        const table = document.getElementById('laps');
+        table.innerHTML = '<tr><th>Lap</th><th>Time (sec)</th></tr>';
+        d.laps.slice().reverse().forEach(l => {
+          const row = table.insertRow(-1);
+          row.insertCell(0).textContent = l.lap;
+          row.insertCell(1).textContent = l.seconds.toFixed(2);
+        });
+      } catch (e) {
+        document.getElementById('conn').innerHTML =
+          '<span class="offline">Dashboard server unreachable</span>';
+      }
+      setTimeout(poll, 500);
+    }
+    poll();
+  </script>
+</body>
+</html>
