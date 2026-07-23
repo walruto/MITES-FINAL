@@ -144,6 +144,6 @@ void loop() {
     }
   }
 
-  // no extra delay - pulseIn()'s own timing is already the limiting factor,
-  // so this scans back-to-back as fast as the sensor allows
+  delay(60); // HC-SR04 needs ~60ms between pings or echoes from the last
+             // reading bleed into the next one and cause false triggers
 }
