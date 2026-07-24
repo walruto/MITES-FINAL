@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "lap-timer-dashboard",
+      "runtimeExecutable": "web_dashboard/venv/bin/python",
+      "runtimeArgs": ["web_dashboard/app.py"],
+      "port": 5000,
+      "autoPort": true
+    },
+    {
+      "name": "accelence-landing",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "--directory", "landing_page", "5500"],
+      "port": 5500,
+      "autoPort": true
+    }
+  ]
+}

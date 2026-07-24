@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Accelence — Wireless Sprint Timing System</title>
+  <meta name="description" content="Accelence is a two-node wireless lap/sprint timing system built on Arduino Nano Every, HC-SR04 ultrasonic sensors, and HC-05 Bluetooth, with a live web dashboard for real-time results.">
+  <link rel="stylesheet" href="static/css/style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.185.1/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.185.1/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="logo"><span class="dot"></span>Accelence</div>
+    <ul>
+      <li><a href="#problem">The Problem</a></li>
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#hardware">Hardware</a></li>
+      <li><a href="#algorithm">Algorithm</a></li>
+      <li><a href="#features">Features</a></li>
+    </ul>
+    <a class="cta" href="#algorithm">Explore the code</a>
+  </nav>
+
+  <!-- ================= HERO ================= -->
+  <header class="hero">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="wrap hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow on-dark">Two-node wireless timing</p>
+        <h1 data-hero-line>Sprint timing,<br>without the <span class="accent">stopwatch</span>.</h1>
+        <p class="lede" data-hero-line>
+          Accelence is a wireless lap/sprint timing system built on Arduino Nano Every boards,
+          HC-SR04 ultrasonic sensors, and HC-05 Bluetooth — paired with a live web dashboard
+          that shows every lap the moment it happens.
+        </p>
+        <div class="hero-ctas" data-hero-line>
+          <a class="btn btn-primary" href="#algorithm">See how it works</a>
+          <a class="btn btn-ghost" href="#hardware">View the hardware</a>
+        </div>
+        <div class="hero-stats" data-hero-line>
+          <div class="stat"><b>2</b><span>Wireless gates</span></div>
+          <div class="stat"><b>&lt;1.5s</b><span>Debounce window</span></div>
+          <div class="stat"><b>0</b><span>Cables between gates</span></div>
+        </div>
+      </div>
+      <div class="hero-card bracket-card on-dark" data-hero-line>
+        <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
+        <span class="corner corner-bl"></span><span class="corner corner-br"></span>
+        <svg class="diagram" viewBox="0 0 460 260" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <text x="40" y="30" fill="#9aa0ab" font-size="10" letter-spacing="2" font-family="ui-monospace, monospace">START GATE</text>
+          <text x="330" y="30" fill="#9aa0ab" font-size="10" letter-spacing="2" font-family="ui-monospace, monospace">FINISH GATE</text>
+          <rect x="30" y="46" width="86" height="60" rx="6" stroke="#3a3c44"/>
+          <rect x="344" y="46" width="86" height="60" rx="6" stroke="#3a3c44"/>
+          <path d="M60 76 q6 -14 12 0 q6 14 12 0 q6 -14 12 0" stroke="#e0223a" stroke-width="1.6"/>
+          <path d="M374 76 q6 -14 12 0 q6 14 12 0 q6 -14 12 0" stroke="#4338ca" stroke-width="1.6"/>
+          <line id="hero-link-line" x1="118" y1="76" x2="342" y2="76" stroke="#3a3c44" stroke-width="1.4" stroke-dasharray="4 4"/>
+          <circle id="hero-packet" cx="118" cy="76" r="4" fill="#e0223a" opacity="0"/>
+          <text x="150" y="66" fill="#6b7280" font-size="9" font-family="ui-monospace, monospace">bluetooth</text>
+          <g stroke="#4a4d55">
+            <line x1="70" y1="150" x2="70" y2="210"/>
+            <line x1="390" y1="150" x2="390" y2="210"/>
+          </g>
+          <circle cx="70" cy="220" r="10" fill="none" stroke="#9aa0ab"/>
+          <path d="M55 245 q15 -18 30 0" stroke="#9aa0ab"/>
+          <path d="M90 224 q90 -34 190 0 q90 34 190 -6" stroke="#3a3c44" stroke-dasharray="2 6"/>
+          <text x="150" y="255" fill="#6b7280" font-size="9" font-family="ui-monospace, monospace">runner path</text>
+        </svg>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= PROBLEM ================= -->
+  <section id="problem" class="wrap problem">
+    <div>
+      <p class="eyebrow">The Problem</p>
+      <h2 style="font-size:1.8rem;font-weight:600;margin:0 0 16px;letter-spacing:-0.01em;">One stopwatch can't cover two lines.</h2>
+      <p>
+        Manually timing sprints or laps with stopwatches is imprecise and doesn't scale —
+        one person can't accurately time multiple runners crossing multiple points.
+        Accelence automates this with two unmanned sensor gates that communicate wirelessly
+        and log every lap automatically.
+      </p>
+    </div>
+    <div class="problem-visual bracket-card">
+      <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
+      <span class="corner corner-bl"></span><span class="corner corner-br"></span>
+      <div class="compare-row"><span>Reaction-time error</span><span class="tag bad">± 0.2–0.3s</span></div>
+      <div class="compare-row"><span>Runners one person can time</span><span class="tag bad">1 at a time</span></div>
+      <div class="compare-row"><span>Requires a wire between gates</span><span class="tag bad">Usually, yes</span></div>
+      <div class="compare-row"><span>Accelence gate-to-gate</span><span class="tag good">Wireless</span></div>
+      <div class="compare-row"><span>Accelence lap logging</span><span class="tag good">Automatic</span></div>
+    </div>
+  </section>
+
+  <!-- ================= HOW IT WORKS ================= -->
+  <section id="how-it-works" class="wrap">
+    <div class="section-head">
+      <p class="eyebrow" style="justify-content:center;">How It Works</p>
+      <h2>Two gates, one wireless handoff.</h2>
+      <p>Each gate is an unmanned Arduino node with an ultrasonic sensor. They talk to each other over Bluetooth so nothing needs to be wired across the track.</p>
+    </div>
+    <div class="steps">
+      <div class="step-card bracket-card" data-step-card>
+        <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
+        <span class="corner corner-bl"></span><span class="corner corner-br"></span>
+        <div class="num">1</div>
+        <h3>Sender gate detects the start</h3>
+        <p>An Arduino with an ultrasonic sensor watches the start line. The moment it detects a runner crossing, it sends a signal wirelessly over Bluetooth to the receiver.</p>
+      </div>
+      <div class="step-arrow" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </div>
+      <div class="step-card bracket-card" data-step-card>
+        <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
+        <span class="corner corner-bl"></span><span class="corner corner-br"></span>
+        <div class="num">2</div>
+        <h3>Receiver gate closes the lap</h3>
+        <p>A second Arduino at the finish line receives that signal and starts an internal timer. Its own ultrasonic sensor watches for the crossing that completes the lap.</p>
+      </div>
+    </div>
+    <div class="steps" style="grid-template-columns:1fr;margin-top:24px;">
+      <div class="step-card bracket-card" data-step-card>
+        <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
+        <span class="corner corner-bl"></span><span class="corner corner-br"></span>
+        <div class="num">3</div>
+        <h3>Live dashboard shows the result</h3>
+        <p>A lightweight local web app reads the receiver's data in real time and displays it on a clean, live-updating page — viewable from any phone or laptop on the same network, no app install required.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 3D HARDWARE VIEWER ================= -->
+  <section id="hardware" class="viewer-section">
+    <div class="wrap viewer-grid">
+      <div class="viewer-stage bracket-card" id="viewer-stage">
+        <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
+        <span class="corner corner-bl"></span><span class="corner corner-br"></span>
+        <div class="viewer-loading" id="viewer-loading">
+          <div class="spinner"></div>
+          <span>Loading 3D model…</span>
+        </div>
+        <div class="viewer-controls">
+          <span>Drag to orbit · scroll to zoom</span>
+          <button id="toggle-rotate" type="button" aria-pressed="true">Auto-rotate</button>
+        </div>
+      </div>
+      <div class="viewer-copy">
+        <p class="eyebrow">Hardware</p>
+        <h2 style="font-size:1.8rem;font-weight:600;margin:0 0 12px;letter-spacing:-0.01em;">Each gate, one enclosure.</h2>
+        <p style="color:var(--ink-soft);line-height:1.6;">
+          The 3D model above is the gate enclosure — an Arduino Nano Every, HC-SR04 sensor, and HC-05
+          Bluetooth module packed into a single unmanned unit. Two of these, one per line, are all
+          the hardware Accelence needs on the track.
+        </p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Arduino Nano Every — reads sensors, runs the timing logic</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>HC-SR04 ultrasonic sensor — detects the runner crossing</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>HC-05 Bluetooth module — links the two gates with no cable</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ALGORITHM (INTERACTIVE PSEUDOCODE) ================= -->
+  <section id="algorithm" class="algo-section">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow" style="justify-content:center;">The Algorithm</p>
+        <h2>Step through one full lap.</h2>
+        <p>This is the actual logic running on both boards, simplified to pseudocode. Press play and watch a start-signal become a logged lap.</p>
+      </div>
+
+      <div class="algo-shell">
+        <div class="algo-toolbar">
+          <div class="tabs" role="tablist" aria-label="Focus board">
+            <button type="button" role="tab" data-focus="both" aria-selected="true">Both boards</button>
+            <button type="button" role="tab" data-focus="sender" aria-selected="false">Sender only</button>
+            <button type="button" role="tab" data-focus="receiver" aria-selected="false">Receiver only</button>
+          </div>
+          <div class="transport">
+            <button type="button" id="btn-prev" aria-label="Previous step">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <button type="button" id="btn-play" class="primary" aria-label="Play">
+              <svg id="icon-play" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              <svg id="icon-pause" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+            </button>
+            <button type="button" id="btn-next" aria-label="Next step">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+            <button type="button" id="btn-reset" aria-label="Reset">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>
+            </button>
+            <span class="step-counter" id="step-counter">Step 1 / 9</span>
+          </div>
+        </div>
+
+        <div class="algo-body">
+          <div class="gate-panel" id="panel-sender" data-panel="sender">
+            <h4><span class="led"></span>Sender — start line (Bluetooth master)</h4>
+            <pre class="pseudo" id="code-sender"></pre>
+          </div>
+          <div class="gate-panel" id="panel-receiver" data-panel="receiver">
+            <h4><span class="led"></span>Receiver — finish line (Bluetooth slave)</h4>
+            <pre class="pseudo" id="code-receiver"></pre>
+          </div>
+        </div>
+
+        <div class="bt-link"><div class="bt-packet" id="bt-packet"></div></div>
+
+        <div class="algo-footer">
+          <div class="narrative" id="narrative"></div>
+          <div class="state-readout">
+            <div class="state-cell"><span class="k">Distance</span><span class="v" id="state-distance">—</span></div>
+            <div class="state-cell"><span class="k">personAtGate</span><span class="v" id="state-gate">false</span></div>
+            <div class="state-cell"><span class="k">waitingForFinish</span><span class="v" id="state-waiting">false</span></div>
+            <div class="state-cell"><span class="k">Result</span><span class="v lap" id="state-lap">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FEATURES ================= -->
+  <section id="features" class="wrap">
+    <div class="section-head">
+      <p class="eyebrow" style="justify-content:center;">Key Features</p>
+      <h2>Built to run itself.</h2>
+    </div>
+    <div class="features">
+      <div class="feature-card bracket-card" data-feature>
+        <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
+        <span class="corner corner-bl"></span><span class="corner corner-br"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+        <h3>Fully wireless between gates</h3>
+        <p>No cable connecting the two sensor stations, removing the distance limitations of a wired setup.</p>
+      </div>
+      <div class="feature-card bracket-card" data-feature>
+        <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
+        <span class="corner corner-bl"></span><span class="corner corner-br"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3 8 4-16 3 8h6"/></svg>
+        <h3>Noise-resistant detection</h3>
+        <p>Debounced sensor readings and a tuned scan rate prevent false triggers from sensor echo/ringing.</p>
+      </div>
+      <div class="feature-card bracket-card" data-feature>
+        <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
+        <span class="corner corner-bl"></span><span class="corner corner-br"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <h3>Bluetooth link health-check</h3>
+        <p>Both boards continuously verify the connection is alive, not just assumed.</p>
+      </div>
+      <div class="feature-card bracket-card" data-feature>
+        <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
+        <span class="corner corner-bl"></span><span class="corner corner-br"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        <h3>Live, shareable results</h3>
+        <p>Anyone on the local network can pull up the dashboard on their own device during a demo or event.</p>
+      </div>
+      <div class="feature-card bracket-card" data-feature>
+        <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
+        <span class="corner corner-bl"></span><span class="corner corner-br"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+        <h3>No internet dependency</h3>
+        <p>Runs entirely on a local network — including a personal hotspot — making it viable anywhere, including venues with unreliable WiFi.</p>
+      </div>
+      <div class="feature-card bracket-card" data-feature>
+        <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
+        <span class="corner corner-bl"></span><span class="corner corner-br"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <h3>&lt;1.5s debounce window</h3>
+        <p>Cooldown timing tuned so a runner's second footfall never double-fires the same gate.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= STACK ================= -->
+  <section class="wrap">
+    <div class="section-head">
+      <p class="eyebrow" style="justify-content:center;">Technical Stack</p>
+      <h2>What's actually running.</h2>
+    </div>
+    <div class="stack-grid">
+      <div class="stack-col">
+        <h3>Hardware</h3>
+        <ul>
+          <li>Arduino Nano Every <span>× 2</span></li>
+          <li>HC-SR04 ultrasonic sensor <span>× 2</span></li>
+          <li>HC-05 Bluetooth module <span>× 2</span></li>
+        </ul>
+      </div>
+      <div class="stack-col">
+        <h3>Firmware</h3>
+        <ul>
+          <li>sender_arduino.ino <span>Arduino C++</span></li>
+          <li>receiver_arduino.ino <span>Arduino C++</span></li>
+        </ul>
+      </div>
+      <div class="stack-col">
+        <h3>Dashboard</h3>
+        <ul>
+          <li>Flask backend <span>Python</span></li>
+          <li>Live-polling front end <span>HTML / CSS / JS</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Accelence — wireless sprint timing system.</span>
+    <span>Built on Arduino Nano Every · HC-SR04 · HC-05</span>
+  </footer>
+
+  <script type="module" src="static/js/main.js"></script>
+</body>
+</html>
