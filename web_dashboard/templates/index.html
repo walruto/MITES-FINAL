@@ -5,38 +5,238 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Lap Timer Dashboard</title>
   <style>
-    body {
-      font-family: -apple-system, sans-serif;
-      background: #111;
-      color: #eee;
-      text-align: center;
-      padding-top: 30px;
-      margin: 0;
+    :root {
+      --ink: #2b2f36;
+      --ink-soft: #6b7280;
+      --glass: rgba(255, 255, 255, 0.55);
+      --glass-border: rgba(255, 255, 255, 0.7);
+      --good: #2fae6b;
+      --bad: #d6494f;
     }
-    h1 { font-size: 1.4rem; margin-bottom: 4px; }
-    .distance { font-size: 4rem; margin: 10px 0; font-weight: bold; }
-    .row { font-size: 1.2rem; margin: 6px 0; }
-    .DETECTED { color: #ff5555; }
-    .clear { color: #55ff88; }
-    .CONNECTED { color: #55ff88; }
-    .NOT_CONNECTED { color: #ff5555; }
-    .unknown { color: #999; }
-    table { margin: 20px auto; border-collapse: collapse; min-width: 220px; }
-    td, th { padding: 6px 16px; border-bottom: 1px solid #333; }
-    .offline { color: #ff5555; font-weight: bold; }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink);
+      background: linear-gradient(135deg, #dfe3e8 0%, #eef0ee 45%, #e6ecdf 100%);
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* soft blurred blobs floating behind the glass card, like droplets */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .blob-dark-1 {
+      width: 220px; height: 220px;
+      top: 8%; right: 14%;
+      background: radial-gradient(circle at 35% 30%, #3a3a3a, #0a0a0a 70%);
+      filter: blur(18px);
+      opacity: 0.85;
+    }
+    .blob-dark-2 {
+      width: 170px; height: 170px;
+      bottom: 12%; left: 9%;
+      background: radial-gradient(circle at 35% 30%, #333, #000 70%);
+      filter: blur(16px);
+      opacity: 0.8;
+    }
+    .blob-glass-1 {
+      width: 190px; height: 190px;
+      top: 22%; left: 6%;
+      background:
+        radial-gradient(circle at 30% 25%, rgba(255,255,255,0.95), rgba(255,255,255,0.1) 40%),
+        radial-gradient(circle at 65% 70%, rgba(200,210,220,0.5), rgba(200,210,220,0) 60%);
+      box-shadow: inset 0 0 30px rgba(255,255,255,0.6), 0 10px 30px rgba(0,0,0,0.08);
+      filter: blur(1px);
+    }
+    .blob-glass-2 {
+      width: 150px; height: 150px;
+      bottom: 16%; right: 10%;
+      background:
+        radial-gradient(circle at 30% 25%, rgba(255,255,255,0.95), rgba(255,255,255,0.1) 40%),
+        radial-gradient(circle at 65% 70%, rgba(200,210,220,0.5), rgba(200,210,220,0) 60%);
+      box-shadow: inset 0 0 24px rgba(255,255,255,0.6), 0 10px 24px rgba(0,0,0,0.08);
+      filter: blur(1px);
+    }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      width: min(560px, 92vw);
+      padding: 40px 36px 32px;
+      border-radius: 28px;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(22px) saturate(140%);
+      -webkit-backdrop-filter: blur(22px) saturate(140%);
+      box-shadow:
+        0 30px 70px rgba(30, 35, 40, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      text-align: center;
+    }
+
+    h1 {
+      font-weight: 500;
+      font-size: 1.6rem;
+      letter-spacing: -0.01em;
+      margin: 0 0 4px;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: var(--ink-soft);
+      margin-bottom: 22px;
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(60,60,60,0.18), transparent);
+      margin: 22px 0;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr;
+      align-items: center;
+      position: relative;
+    }
+    .stats .split {
+      background: rgba(60,60,60,0.15);
+      height: 76px;
+      justify-self: center;
+    }
+    .stat { padding: 4px 10px; }
+    .stat .value {
+      font-size: 2.6rem;
+      font-weight: 600;
+      line-height: 1.05;
+    }
+    .stat .label {
+      margin-top: 6px;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+    }
+
+    .plus {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      color: var(--ink-soft);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      background: rgba(0,0,0,0.04);
+      box-shadow: inset 1px 1px 3px rgba(0,0,0,0.08), inset -1px -1px 3px rgba(255,255,255,0.6);
+    }
+    .badge.DETECTED, .badge.CONNECTED { color: var(--good); }
+    .badge.clear, .badge.NOT_CONNECTED { color: var(--ink-soft); }
+    .badge.NOT_CONNECTED { color: var(--bad); }
+
+    h2 {
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      font-weight: 600;
+      margin: 26px 0 12px;
+      text-align: left;
+    }
+
+    .laps {
+      max-height: 220px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .lap-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.5);
+      box-shadow:
+        3px 3px 6px rgba(0,0,0,0.06),
+        -3px -3px 6px rgba(255,255,255,0.7);
+      font-size: 0.95rem;
+    }
+    .lap-row .n { color: var(--ink-soft); font-weight: 600; }
+    .lap-row .t { font-weight: 600; }
+    .empty {
+      color: var(--ink-soft);
+      font-size: 0.85rem;
+      padding: 14px 0;
+    }
+
+    .offline {
+      color: var(--bad);
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-bottom: 14px;
+    }
   </style>
 </head>
 <body>
-  <h1>Lap Timer Dashboard</h1>
-  <div class="row" id="conn"></div>
-  <div class="distance" id="distance">-- cm</div>
-  <div class="row"><span id="status">--</span></div>
-  <div class="row"><span id="link">--</span></div>
+  <div class="blob blob-dark-1"></div>
+  <div class="blob blob-dark-2"></div>
+  <div class="blob blob-glass-1"></div>
+  <div class="blob blob-glass-2"></div>
 
-  <h2>Laps</h2>
-  <table id="laps">
-    <tr><th>Lap</th><th>Time (sec)</th></tr>
-  </table>
+  <div class="card">
+    <div id="conn"></div>
+    <h1>Lap Timer</h1>
+    <div class="subtitle">Live sensor + Bluetooth link status</div>
+
+    <div class="stats">
+      <div class="plus">+</div>
+      <div class="stat">
+        <div class="value" id="distance">--</div>
+        <div class="label">Distance (cm)</div>
+      </div>
+      <div class="split"></div>
+      <div class="stat">
+        <div class="badge" id="status">--</div>
+        <div class="label" style="margin-top:10px;">Detection</div>
+        <div class="badge" id="link" style="margin-top:10px;">--</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <h2>Laps</h2>
+    <div class="laps" id="laps">
+      <div class="empty">No laps yet</div>
+    </div>
+  </div>
 
   <script>
     async function poll() {
@@ -46,29 +246,36 @@
 
         document.getElementById('conn').innerHTML = d.connected
           ? ''
-          : '<span class="offline">Serial port not connected - check SERIAL_PORT in app.py</span>';
+          : '<div class="offline">Serial port not connected - check SERIAL_PORT in app.py</div>';
 
         document.getElementById('distance').textContent =
           (d.distance_cm ?? '--') + ' cm';
 
         const statusEl = document.getElementById('status');
         statusEl.textContent = d.status;
-        statusEl.className = d.status;
+        statusEl.className = 'badge ' + d.status;
 
         const linkEl = document.getElementById('link');
         linkEl.textContent = 'Link: ' + d.link;
-        linkEl.className = d.link.replace(' ', '_');
+        linkEl.className = 'badge ' + d.link.replace(' ', '_');
 
-        const table = document.getElementById('laps');
-        table.innerHTML = '<tr><th>Lap</th><th>Time (sec)</th></tr>';
-        d.laps.slice().reverse().forEach(l => {
-          const row = table.insertRow(-1);
-          row.insertCell(0).textContent = l.lap;
-          row.insertCell(1).textContent = l.seconds.toFixed(2);
-        });
+        const laps = document.getElementById('laps');
+        if (!d.laps.length) {
+          laps.innerHTML = '<div class="empty">No laps yet</div>';
+        } else {
+          laps.innerHTML = '';
+          d.laps.slice().reverse().forEach(l => {
+            const row = document.createElement('div');
+            row.className = 'lap-row';
+            row.innerHTML =
+              '<span class="n">Lap ' + l.lap + '</span>' +
+              '<span class="t">' + l.seconds.toFixed(2) + ' sec</span>';
+            laps.appendChild(row);
+          });
+        }
       } catch (e) {
         document.getElementById('conn').innerHTML =
-          '<span class="offline">Dashboard server unreachable</span>';
+          '<div class="offline">Dashboard server unreachable</div>';
       }
       setTimeout(poll, 500);
     }
