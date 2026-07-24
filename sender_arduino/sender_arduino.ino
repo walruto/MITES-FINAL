@@ -12,8 +12,8 @@ long duration;
 int distanceCm;
 
 // tetting the length like MITES values
-const int tooClose = 50;
-const int tooFar   = 100;
+const int tooClose = 5;
+const int tooFar   = 75;
 
 bool personAtGate = false;
 unsigned long lastTriggerTime = 0;
@@ -55,8 +55,8 @@ void loop() {
   
 
   // ignore anything too far / no echo entirely, don't count it
-  if (distanceCm != 0 && distanceCm <= tooFar) {
-    if (distanceCm < tooClose) {
+  if (distanceCm >= 0 && distanceCm <= tooFar) {
+
       if (!personAtGate) {
         unsigned long now = millis();
 
@@ -69,7 +69,6 @@ void loop() {
           delay(200); // same pacing as the old pulse width
           Serial1.write('0'); // pin 10 LOW equivalent
         }
-      }
     } else {
       personAtGate = false; // re-arm for the next pass
     }
