@@ -1,3 +1,4 @@
+import os
 import re
 import threading
 import time
@@ -7,7 +8,7 @@ from flask import Flask, jsonify, render_template
 
 # CHANGE THIS to match your board's port. Find it with `ls /dev/cu.*`
 # while the board is plugged in (or check Tools > Port in the Arduino IDE).
-SERIAL_PORT = "/dev/cu.usbmodem1101"
+SERIAL_PORT = "/dev/cu.usbmodem101"
 BAUD_RATE = 9600
 
 app = Flask(__name__)
@@ -21,10 +22,10 @@ state = {
     "connected": False,      # whether the serial port itself is open
 }
 
-DISTANCE_RE = re.compile(r"Distance:\s*(-?\d+)\s*cm")
-STATUS_RE = re.compile(r"\|\s*(DETECTED|clear)")
-LINK_RE = re.compile(r"Link:\s*(CONNECTED|NOT CONNECTED)")
-LAP_RE = re.compile(r"Lap (\d+) completed in ([\d.]+) sec")
+DISTANCE_RE = re.compile(r"distance:\s*(-?\d+)\s*cm", re.IGNORECASE)
+STATUS_RE = re.compile(r"\|\s*(DETECTED|clear)", re.IGNORECASE)
+LINK_RE = re.compile(r"Link:\s*(CONNECTED|NOT CONNECTED)", re.IGNORECASE)
+LAP_RE = re.compile(r"Lap (\d+) completed in ([\d.]+) sec", re.IGNORECASE)
 
 
 def read_serial():
@@ -76,4 +77,4 @@ def data():
 
 if __name__ == "__main__":
     threading.Thread(target=read_serial, daemon=True).start()
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

@@ -3,13 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lap Timer Dashboard</title>
+  <title>Accelence</title>
   <style>
     :root {
       --ink: #2b2f36;
       --ink-soft: #6b7280;
-      --glass: rgba(255, 255, 255, 0.55);
-      --glass-border: rgba(255, 255, 255, 0.7);
+      --glass: rgba(255, 255, 255, 0.6);
+      --glass-border: rgba(0, 0, 0, 0.08);
+      --primary: #4338ca;
       --good: #2fae6b;
       --bad: #d6494f;
     }
@@ -17,7 +18,7 @@
     * { box-sizing: border-box; }
 
     body {
-      font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+      font-family: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Segoe UI Rounded", Quicksand, sans-serif;
       margin: 0;
       min-height: 100vh;
       display: flex;
@@ -29,7 +30,7 @@
       position: relative;
     }
 
-    /* soft blurred blobs floating behind the glass card, like droplets */
+    /* soft blurred blobs floating behind the card, like droplets */
     .blob {
       position: fixed;
       border-radius: 50%;
@@ -42,6 +43,7 @@
       background: radial-gradient(circle at 35% 30%, #3a3a3a, #0a0a0a 70%);
       filter: blur(18px);
       opacity: 0.85;
+      animation: driftA 17s ease-in-out infinite;
     }
     .blob-dark-2 {
       width: 170px; height: 170px;
@@ -49,6 +51,7 @@
       background: radial-gradient(circle at 35% 30%, #333, #000 70%);
       filter: blur(16px);
       opacity: 0.8;
+      animation: driftB 21s ease-in-out infinite;
     }
     .blob-glass-1 {
       width: 190px; height: 190px;
@@ -58,6 +61,7 @@
         radial-gradient(circle at 65% 70%, rgba(200,210,220,0.5), rgba(200,210,220,0) 60%);
       box-shadow: inset 0 0 30px rgba(255,255,255,0.6), 0 10px 30px rgba(0,0,0,0.08);
       filter: blur(1px);
+      animation: driftC 19s ease-in-out infinite;
     }
     .blob-glass-2 {
       width: 150px; height: 150px;
@@ -67,21 +71,59 @@
         radial-gradient(circle at 65% 70%, rgba(200,210,220,0.5), rgba(200,210,220,0) 60%);
       box-shadow: inset 0 0 24px rgba(255,255,255,0.6), 0 10px 24px rgba(0,0,0,0.08);
       filter: blur(1px);
+      animation: driftD 15s ease-in-out infinite;
     }
 
-    .card {
+    @keyframes driftA {
+      0%   { transform: translate(0, 0) scale(1); }
+      33%  { transform: translate(-40px, 30px) scale(1.06); }
+      66%  { transform: translate(20px, 55px) scale(0.94); }
+      100% { transform: translate(0, 0) scale(1); }
+    }
+    @keyframes driftB {
+      0%   { transform: translate(0, 0) scale(1); }
+      40%  { transform: translate(35px, -25px) scale(1.05); }
+      75%  { transform: translate(-25px, -45px) scale(0.95); }
+      100% { transform: translate(0, 0) scale(1); }
+    }
+    @keyframes driftC {
+      0%   { transform: translate(0, 0); }
+      50%  { transform: translate(45px, 40px); }
+      100% { transform: translate(0, 0); }
+    }
+    @keyframes driftD {
+      0%   { transform: translate(0, 0); }
+      50%  { transform: translate(-35px, -30px); }
+      100% { transform: translate(0, 0); }
+    }
+
+    /* corner-bracket decorator, borrowed from the 21st.dev feature-card style:
+       four small L-shaped marks at the corners of a sharp-edged bordered card */
+    .bracket-card {
       position: relative;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 2px;
+    }
+    .bracket-card .corner {
+      position: absolute;
+      display: block;
+      width: 9px;
+      height: 9px;
+      border-color: var(--primary);
+    }
+    .bracket-card .corner-tl { top: -1px; left: -1px; border-left: 2px solid; border-top: 2px solid; }
+    .bracket-card .corner-tr { top: -1px; right: -1px; border-right: 2px solid; border-top: 2px solid; }
+    .bracket-card .corner-bl { bottom: -1px; left: -1px; border-left: 2px solid; border-bottom: 2px solid; }
+    .bracket-card .corner-br { bottom: -1px; right: -1px; border-right: 2px solid; border-bottom: 2px solid; }
+
+    .card {
       z-index: 1;
       width: min(560px, 92vw);
       padding: 40px 36px 32px;
-      border-radius: 28px;
-      background: var(--glass);
-      border: 1px solid var(--glass-border);
       backdrop-filter: blur(22px) saturate(140%);
       -webkit-backdrop-filter: blur(22px) saturate(140%);
-      box-shadow:
-        0 30px 70px rgba(30, 35, 40, 0.18),
-        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      box-shadow: 0 30px 70px rgba(30, 35, 40, 0.14);
       text-align: center;
     }
 
@@ -99,52 +141,37 @@
     }
 
     .divider {
+      position: relative;
       height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(60,60,60,0.18), transparent);
-      margin: 22px 0;
+      margin: 26px 0;
+      border-top: 1px dashed rgba(60, 60, 60, 0.25);
     }
 
     .stats {
-      display: grid;
-      grid-template-columns: 1fr 1px 1fr;
+      display: flex;
+      justify-content: center;
       align-items: center;
-      position: relative;
     }
-    .stats .split {
-      background: rgba(60,60,60,0.15);
-      height: 76px;
-      justify-self: center;
+
+    .stat-card {
+      padding: 18px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
     }
-    .stat { padding: 4px 10px; }
-    .stat .value {
-      font-size: 2.6rem;
-      font-weight: 600;
-      line-height: 1.05;
-    }
-    .stat .label {
-      margin-top: 6px;
+
+    .stat-heading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       font-size: 0.72rem;
       letter-spacing: 0.12em;
       color: var(--ink-soft);
       text-transform: uppercase;
     }
-
-    .plus {
-      position: absolute;
-      top: -14px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      background: var(--glass);
-      border: 1px solid var(--glass-border);
-      box-shadow: 0 6px 14px rgba(0,0,0,0.12);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.9rem;
-      color: var(--ink-soft);
-    }
+    .stat-heading svg { width: 13px; height: 13px; }
 
     .badge {
       display: inline-block;
@@ -182,11 +209,10 @@
       justify-content: space-between;
       align-items: center;
       padding: 10px 16px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.5);
-      box-shadow:
-        3px 3px 6px rgba(0,0,0,0.06),
-        -3px -3px 6px rgba(255,255,255,0.7);
+      border-radius: 6px;
+      border: 1px solid rgba(0,0,0,0.06);
+      background: rgba(255,255,255,0.55);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
       font-size: 0.95rem;
     }
     .lap-row .n { color: var(--ink-soft); font-weight: 600; }
@@ -211,22 +237,34 @@
   <div class="blob blob-glass-1"></div>
   <div class="blob blob-glass-2"></div>
 
-  <div class="card">
+  <div class="card bracket-card">
+    <span class="corner corner-tl"></span>
+    <span class="corner corner-tr"></span>
+    <span class="corner corner-bl"></span>
+    <span class="corner corner-br"></span>
+
     <div id="conn"></div>
-    <h1>Lap Timer</h1>
+    <h1>Accelence</h1>
     <div class="subtitle">Live sensor + Bluetooth link status</div>
 
     <div class="stats">
-      <div class="plus">+</div>
-      <div class="stat">
-        <div class="value" id="distance">--</div>
-        <div class="label">Distance (cm)</div>
-      </div>
-      <div class="split"></div>
-      <div class="stat">
+      <div class="stat-card bracket-card">
+        <span class="corner corner-tl"></span>
+        <span class="corner corner-tr"></span>
+        <span class="corner corner-bl"></span>
+        <span class="corner corner-br"></span>
+
+        <div class="stat-heading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3 8 4-16 3 8h6"/></svg>
+          Detection
+        </div>
         <div class="badge" id="status">--</div>
-        <div class="label" style="margin-top:10px;">Detection</div>
-        <div class="badge" id="link" style="margin-top:10px;">--</div>
+
+        <div class="stat-heading" style="margin-top:6px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+          Bluetooth Link
+        </div>
+        <div class="badge" id="link">--</div>
       </div>
     </div>
 
@@ -248,15 +286,12 @@
           ? ''
           : '<div class="offline">Serial port not connected - check SERIAL_PORT in app.py</div>';
 
-        document.getElementById('distance').textContent =
-          (d.distance_cm ?? '--') + ' cm';
-
         const statusEl = document.getElementById('status');
         statusEl.textContent = d.status;
         statusEl.className = 'badge ' + d.status;
 
         const linkEl = document.getElementById('link');
-        linkEl.textContent = 'Link: ' + d.link;
+        linkEl.textContent = d.link;
         linkEl.className = 'badge ' + d.link.replace(' ', '_');
 
         const laps = document.getElementById('laps');
